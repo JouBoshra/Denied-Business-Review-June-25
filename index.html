@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Denied Team Monthly Review Dashboard June 25</title>
+    <title>Denied Team Monthly Review Dashboard</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -29,8 +29,15 @@
             <button class="btn" data-view="action">Action</button>
             <button class="btn" data-view="challenges">Challenges</button>
             <button class="btn" data-view="training">Training</button>
+            <button class="btn" data-view="analysis2025">Analysis 2025</button>
         </nav>
     </header>
+
+    <!-- Analysis 2025 Section -->
+    <section id="analysis2025" class="view hidden space-y-8">
+        <h2 class="text-2xl font-semibold mb-4">Analysis 2025 - Key Metrics</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="analysis2025Cards"></div>
+    </section>
 
     <!-- Overview Section -->
     <section id="overview" class="view grid grid-cols-1 sm:grid-cols-3 gap-4"></section>
@@ -59,6 +66,10 @@
             <div class="bg-white rounded-lg shadow p-4">
                 <h2 class="text-xl font-semibold mb-4">Denied % Comparison</h2>
                 <canvas id="lineChartPct"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="text-xl font-semibold mb-4">Financial Comparison (Total Balance Left)</h2>
+                <canvas id="lineChartFinancial"></canvas>
             </div>
         </div>
     </section>
@@ -122,12 +133,12 @@
         ];
 
         const monthlyData = [
-            { month: 'Jan', denied: 1974, underpaid: 1146, deniedPct2025: 7.61, deniedPct2024: 6.83, underpaidPct2025: 4.42, underpaidPct2024: 6.41, denied2024: 1590, underpaid2024: 1492 },
-            { month: 'Feb', denied: 2062, underpaid: 1021, deniedPct2025: 8.32, deniedPct2024: 8.98, underpaidPct2025: 4.12, underpaidPct2024: 9.90, denied2024: 2010, underpaid2024: 2217 },
-            { month: 'Mar', denied: 2268, underpaid: 1143, deniedPct2025: 8.37, deniedPct2024: 9.21, underpaidPct2025: 4.22, underpaidPct2024: 6.68, denied2024: 2112, underpaid2024: 1531 },
-            { month: 'Apr', denied: 3029, underpaid: 496, deniedPct2025: 10.93, deniedPct2024: 1.30, underpaidPct2025: 1.79, underpaidPct2024: 9.73, denied2024: 583, underpaid2024: 2412 },
-            { month: 'May', denied: 2100, underpaid: 355, deniedPct2025: 5.83, deniedPct2024: 1.21, underpaidPct2025: 0.99, underpaidPct2024: 10.62, denied2024: 325, underpaid2024: 2844 },
-            { month: 'Jun', denied: 800, underpaid: 151, deniedPct2025: 2.82, deniedPct2024: 0.83, underpaidPct2025: 0.53, underpaidPct2024: 10.61, denied2024: 206, underpaid2024: 2645 },
+            { month: 'Jan', denied: 1974, underpaid: 1146, deniedPct2025: 7.61, deniedPct2024: 6.83, underpaidPct2025: 4.42, underpaidPct2024: 6.41, denied2024: 1590, underpaid2024: 1492, deniedContractedRate: 419694.95, deniedInsurancePayment: 82554.15, deniedTotalBalanceLeft: 337140.80, underpaidContractedRate: 258578.88, underpaidInsurancePayment: 215692.77, underpaidTotalBalanceLeft: 42886.11 },
+            { month: 'Feb', denied: 2062, underpaid: 1021, deniedPct2025: 8.32, deniedPct2024: 8.98, underpaidPct2025: 4.12, underpaidPct2024: 9.90, denied2024: 2010, underpaid2024: 2217, deniedContractedRate: 451702.93, deniedInsurancePayment: 61565.13, deniedTotalBalanceLeft: 390137.80, underpaidContractedRate: 210163.14, underpaidInsurancePayment: 173649.75, underpaidTotalBalanceLeft: 36513.39 },
+            { month: 'Mar', denied: 2268, underpaid: 1143, deniedPct2025: 8.37, deniedPct2024: 9.21, underpaidPct2025: 4.22, underpaidPct2024: 6.68, denied2024: 2112, underpaid2024: 1531, deniedContractedRate: 360895.91, deniedInsurancePayment: 92251.94, deniedTotalBalanceLeft: 268643.97, underpaidContractedRate: 212568.90, underpaidInsurancePayment: 175944.03, underpaidTotalBalanceLeft: 36624.87 },
+            { month: 'Apr', denied: 3029, underpaid: 496, deniedPct2025: 10.93, deniedPct2024: 1.30, underpaidPct2025: 1.79, underpaidPct2024: 9.73, denied2024: 583, underpaid2024: 2412, deniedContractedRate: 595666.98, deniedInsurancePayment: 83207.80, deniedTotalBalanceLeft: 512459.18, underpaidContractedRate: 87860.04, underpaidInsurancePayment: 73149.31, underpaidTotalBalanceLeft: 14710.73 },
+            { month: 'May', denied: 2100, underpaid: 355, deniedPct2025: 5.83, deniedPct2024: 1.21, underpaidPct2025: 0.99, underpaidPct2024: 10.62, denied2024: 325, underpaid2024: 2844, deniedContractedRate: 363860.96, deniedInsurancePayment: 32572.18, deniedTotalBalanceLeft: 331288.78, underpaidContractedRate: 54720.54, underpaidInsurancePayment: 32724.74, underpaidTotalBalanceLeft: 21995.80 },
+            { month: 'Jun', denied: 800, underpaid: 151, deniedPct2025: 2.82, deniedPct2024: 0.83, underpaidPct2025: 0.53, underpaidPct2024: 10.61, denied2024: 206, underpaid2024: 2645, deniedContractedRate: 87658.10, deniedInsurancePayment: 4558.50, deniedTotalBalanceLeft: 83099.60, underpaidContractedRate: 27443.06, underpaidInsurancePayment: 13092.05, underpaidTotalBalanceLeft: 14351.01 },
         ];
 
         const teamPerformance = [
@@ -162,21 +173,40 @@
 
         const actionPlan = [
             'Anthem BlueCross: cash patients with out-of-network benefits since claims are denied.',
-            'On Independence day ( Official OFF ) we gave training to old and new employees for more insurance companies ( Eligibility – Benefits – Common Denial reason and best strategy to solve it )',
-            'Regular Audit on team members for their overall performance, handling claims, server hours & calls.',
-            'Although we are still getting underpayments from Healthnet but once we reprocess the claim they pay it with interest.',
+            'Independence Day training on eligibility, benefits, common denial reasons, and strategies.',
+            'Regular audits on claims handling, server hours & calls performance.',
+            'Reprocess under-payments from Healthnet to collect interest.',
         ];
 
         const challenges = [
             'Medical representatives refusing medical-record expedites (BlueShield).',
             'No recoupment/void letters for paid claims with interest.',
-            'C) Place of service denial got back and they don’t want to solve the issue and also some representative refuse to reprocess the claims.',
+            'Place-of-service denials unresolved and refusal to reprocess claims.',
         ];
 
         const trainingInfo = {
             participants: ['George Nessim', 'Christeen Ashraf', 'Youstina Mina (Excluded)'],
             duration: '10 days (incl. 2 days of global Internet issues)',
             hours: 80,
+        };
+
+        const analysis2025Data = {
+            billedClaims: 161398,
+            deniedClaims: 12233,
+            paidDeniedClaims: 3275,
+            pendingDeniedClaims: 8958,
+            deniedContractedRate: 2279479.83,
+            deniedInsurancePayment: 356709.70,
+            deniedTotalBalanceLeft: 1922770.13,
+            underpaidClaims: 4312,
+            paidUnderpaidClaims: 2696,
+            pendingUnderpaidClaims: 1616,
+            underpaidContractedRate: 851334.56,
+            underpaidInsurancePayment: 684252.65,
+            underpaidTotalBalanceLeft: 167081.91,
+            grandTotalContractedRate: 3130814.39,
+            grandTotalInsurancePayment: 1040962.35,
+            grandTotalBalanceLeft: 2089852.04
         };
 
         // ---------- Render helpers ----------
@@ -315,41 +345,113 @@
             });
 
             // Line (Denied % 2024 vs 2025)
-            new Chart(document.getElementById('lineChartPct'), {
-                type: 'line',
+            new Chart(document.getElementById("lineChartPct"), {
+                type: "line",
                 data: {
-                    labels: monthlyData.map(d => d.month),
+                    labels: monthlyData.map((d) => d.month),
                     datasets: [
                         {
-                            label: '2024 %',
-                            data: monthlyData.map(d => d.deniedPct2024),
-                            borderColor: '#10b981',
+                            label: "2024 %",
+                            data: monthlyData.map((d) => d.deniedPct2024),
+                            borderColor: "#10b981",
                             fill: false,
                         },
                         {
-                            label: '2025 %',
-                            data: monthlyData.map(d => d.deniedPct2025),
-                            borderColor: '#f87171',
+                            label: "2025 %",
+                            data: monthlyData.map((d) => d.deniedPct2025),
+                            borderColor: "#f87171",
                             fill: false,
                         },
                     ],
                 },
-                options: { responsive: true, scales: { y: { ticks: { callback: v => v + '%' } } } },
+                options: { responsive: true, scales: { y: { ticks: { callback: (v) => v + "%" } } } },
+            });
+
+            // Line (Financial Comparison - Total Balance Left)
+            new Chart(document.getElementById("lineChartFinancial"), {
+                type: "line",
+                data: {
+                    labels: monthlyData.map((d) => d.month),
+                    datasets: [
+                        {
+                            label: "Denied Claims - Total Balance Left",
+                            data: monthlyData.map((d) => d.deniedTotalBalanceLeft),
+                            borderColor: "#f87171",
+                            fill: false,
+                        },
+                        {
+                            label: "Underpaid Claims - Total Balance Left",
+                            data: monthlyData.map((d) => d.underpaidTotalBalanceLeft),
+                            borderColor: "#60a5fa",
+                            fill: false,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return "$" + value.toLocaleString();
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+        }
+
+        function renderAnalysis2025() {
+            const wrap = document.getElementById('analysis2025Cards');
+            wrap.innerHTML = '';
+
+            const dataToDisplay = [
+                { label: 'Billed Claims', value: analysis2025Data.billedClaims },
+                { label: 'Denied Claims', value: analysis2025Data.deniedClaims },
+                { label: 'Paid Denied Claims', value: analysis2025Data.paidDeniedClaims },
+                { label: 'Pending Denied Claims', value: analysis2025Data.pendingDeniedClaims },
+                { label: 'Denied Contracted Rate', value: analysis2025Data.deniedContractedRate, isCurrency: true },
+                { label: 'Denied Insurance Payment', value: analysis2025Data.deniedInsurancePayment, isCurrency: true },
+                { label: 'Denied Total Balance Left', value: analysis2025Data.deniedTotalBalanceLeft, isCurrency: true },
+                { label: 'Underpaid Claims', value: analysis2025Data.underpaidClaims },
+                { label: 'Paid Underpaid Claims', value: analysis2025Data.paidUnderpaidClaims },
+                { label: 'Pending Underpaid Claims', value: analysis2025Data.pendingUnderpaidClaims },
+                { label: 'Underpaid Contracted Rate', value: analysis2025Data.underpaidContractedRate, isCurrency: true },
+                { label: 'Underpaid Insurance Payment', value: analysis2025Data.underpaidInsurancePayment, isCurrency: true },
+                { label: 'Underpaid Total Balance Left', value: analysis2025Data.underpaidTotalBalanceLeft, isCurrency: true },
+                { label: 'Grand Total Contracted Rate', value: analysis2025Data.grandTotalContractedRate, isCurrency: true },
+                { label: 'Grand Total Insurance Payment', value: analysis2025Data.grandTotalInsurancePayment, isCurrency: true },
+                { label: 'Grand Total Balance Left', value: analysis2025Data.grandTotalBalanceLeft, isCurrency: true },
+            ];
+
+            dataToDisplay.forEach(item => {
+                const formattedValue = item.isCurrency ? '$' + item.value.toLocaleString() : item.value.toLocaleString();
+                wrap.insertAdjacentHTML(
+                    'beforeend',
+                    `<div class="bg-white rounded-lg shadow p-4">
+               <p class="text-sm text-gray-500">${item.label}</p>
+               <p class="text-2xl font-bold">${formattedValue}</p>
+             </div>`
+                );
             });
         }
 
         // ---------- Navigation ----------
-        const views = document.querySelectorAll('.view');
+        const views = document.querySelectorAll(".view");
         function showView(id) {
-            views.forEach(v => (v.id === id ? v.classList.remove('hidden') : v.classList.add('hidden')));
-            document.querySelectorAll('.btn').forEach(b => {
-                b.classList.toggle('bg-blue-600', b.dataset.view === id);
-                b.classList.toggle('text-white', b.dataset.view === id);
+            views.forEach((v) =>
+                v.id === id ? v.classList.remove("hidden") : v.classList.add("hidden")
+            );
+            document.querySelectorAll(".btn").forEach((b) => {
+                b.classList.toggle("bg-blue-600", b.dataset.view === id);
+                b.classList.toggle("text-white", b.dataset.view === id);
             });
         }
 
-        document.querySelectorAll('.btn').forEach(btn =>
-            btn.addEventListener('click', () => showView(btn.dataset.view))
+        document.querySelectorAll(".btn").forEach((btn) =>
+            btn.addEventListener("click", () => showView(btn.dataset.view))
         );
 
         // ---------- Initial render ----------
@@ -357,9 +459,11 @@
         renderTeam();
         renderReprocess();
         renderLists();
+        renderAnalysis2025();
         createCharts();
-        showView('overview'); // default
+        showView("overview"); // default
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </body>
 
 </html>
