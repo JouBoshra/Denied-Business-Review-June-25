@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Denied Team Monthly Review Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .btn-active {
+            @apply bg-blue-600 text-white;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-8">
+    <!-- Header & Navigation -->
+    <header class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+        <h1 class="text-3xl font-bold mb-4 sm:mb-0">Denied Team Monthly Review</h1>
+        <nav class="space-x-2">
+            <button class="btn" data-view="overview">Overview</button>
+            <button class="btn" data-view="stats">Stats</button>
+            <button class="btn" data-view="comparison">Comparison</button>
+            <button class="btn" data-view="team">Team</button>
+            <button class="btn" data-view="reprocess">Reprocess</button>
+            <button class="btn" data-view="action">Action</button>
+            <button class="btn" data-view="challenges">Challenges</button>
+            <button class="btn" data-view="training">Training</button>
+        </nav>
+    </header>
+
+    <!-- Overview Section -->
+    <section id="overview" class="view grid grid-cols-1 sm:grid-cols-3 gap-4"></section>
+
+    <!-- Stats Section -->
+    <section id="stats" class="view hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="text-xl font-semibold mb-4">Monthly Denied vs Underpaid</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="text-xl font-semibold mb-4">Distribution of Claims</h2>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section id="comparison" class="view hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="text-xl font-semibold mb-4">2024 vs 2025 Denied Claims</h2>
+                <canvas id="lineChartDenied"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="text-xl font-semibold mb-4">Denied % Comparison</h2>
+                <canvas id="lineChartPct"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="view hidden mt-6">
+        <h2 class="text-2xl font-semibold mb-4">Team Performance - June 2025</h2>
+        <div class="overflow-auto bg-white rounded-lg shadow">
+            <table class="min-w-full text-left">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-2">Name</th>
+                        <th class="px-4 py-2">Calls</th>
+                        <th class="px-4 py-2">Server Time</th>
+                        <th class="px-4 py-2">Resolved</th>
+                        <th class="px-4 py-2">Records</th>
+                        <th class="px-4 py-2">Level</th>
+                        <th class="px-4 py-2">Grade</th>
+                    </tr>
+                </thead>
+                <tbody id="teamBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Reprocess Section -->
+    <section id="reprocess" class="view hidden grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-8 gap-4"></section>
+
+    <!-- Action Plan Section -->
+    <section id="action" class="view hidden max-w-xl">
+        <h2 class="text-2xl font-semibold mb-4">Action Plan</h2>
+        <ul id="actionList" class="list-disc pl-6 space-y-2 text-gray-700"></ul>
+    </section>
+
+    <!-- Challenges Section -->
+    <section id="challenges" class="view hidden max-w-xl">
+        <h2 class="text-2xl font-semibold mb-4">Challenges</h2>
+        <ul id="challengeList" class="list-disc pl-6 space-y-2 text-gray-700"></ul>
+    </section>
+
+    <!-- Training Section -->
+    <section id="training" class="view hidden max-w-md">
+        <h2 class="text-2xl font-semibold mb-4">Training (as of 7.1.2025)</h2>
+        <ol id="trainingList" class="list-decimal pl-6 space-y-1"></ol>
+        <p id="trainingDuration" class="mt-4 text-gray-700"></p>
+        <p id="trainingHours" class="text-gray-700"></p>
+    </section>
+
+    <!-- Script Section -->
+    <script>
+        // Attach Tailwind classes to buttons
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.classList.add('px-3', 'py-1', 'rounded', 'border', 'border-gray-300', 'text-sm', 'bg-white', 'hover:bg-gray-100');
+        });
+
+        // --- Data ---
+        const summaryMetrics = [
+            { label: 'Total Denied Claims (2025)', value: 12233 },
+            { label: 'Total Underpaid Claims (2025)', value: 4312 },
+            { label: 'Grand Total Claims (2025)', value: 131829 },
+        ];
+
+        const monthlyData = [
+            { month: 'Jan', denied: 1974, underpaid: 1146, deniedPct2025: 7.61, deniedPct2024: 6.83, underpaidPct2025: 4.42, underpaidPct2024: 6.41, denied2024: 1590, underpaid2024: 1492 },
+            { month: 'Feb', denied: 2062, underpaid: 1021, deniedPct2025: 8.32, deniedPct2024: 8.98, underpaidPct2025: 4.12, underpaidPct2024: 9.90, denied2024: 2010, underpaid2024: 2217 },
+            { month: 'Mar', denied: 2268, underpaid: 1143, deniedPct2025: 8.37, deniedPct2024: 9.21, underpaidPct2025: 4.22, underpaidPct2024: 6.68, denied2024: 2112, underpaid2024: 1531 },
+            { month: 'Apr', denied: 3029, underpaid: 496, deniedPct2025: 10.93, deniedPct2024: 1.30, underpaidPct2025: 1.79, underpaidPct2024: 9.73, denied2024: 583, underpaid2024: 2412 },
+            { month: 'May', denied: 2100, underpaid: 355, deniedPct2025: 5.83, deniedPct2024: 1.21, underpaidPct2025: 0.99, underpaidPct2024: 10.62, denied2024: 325, underpaid2024: 2844 },
+            { month: 'Jun', denied: 800, underpaid: 151, deniedPct2025: 2.82, deniedPct2024: 0.83, underpaidPct2025: 0.53, underpaidPct2024: 10.61, denied2024: 206, underpaid2024: 2645 },
+        ];
+
+        const teamPerformance = [
+            { name: 'Saly Magdy', calls: 160, serverTime: '158:45:44', resolved: 158, records: 658, level: 'Excellent', grade: 9 },
+            { name: 'Rita Magdy', calls: 64, serverTime: '155:38:49', resolved: 190, records: 1012, level: 'Excellent', grade: 9 },
+            { name: 'Michael Ahdi', calls: 220, serverTime: '162:46:39', resolved: 206, records: 1, level: 'Very Good', grade: 8.5 },
+            { name: 'Beshoy Milad', calls: 151, serverTime: '183:26:21', resolved: 256, records: 0, level: 'Very Good', grade: 8 },
+            { name: 'Amir Helmy', calls: 99, serverTime: '150:40:50', resolved: 408, records: 4, level: 'Very Good', grade: 8 },
+            { name: 'Peter Antoine', calls: 265, serverTime: '171:18:42', resolved: 303, records: 14, level: 'Good', grade: 7 },
+            { name: 'Essam Emad', calls: 120, serverTime: '149:28:22', resolved: 171, records: 1, level: 'Good', grade: 7 },
+            { name: 'KC Cayabyab', calls: 147, serverTime: '174:43:38', resolved: 198, records: 20, level: 'Good', grade: 7 },
+            { name: 'Romel Alfy', calls: 185, serverTime: '163:05:59', resolved: 300, records: 22, level: 'Good', grade: 7 },
+            { name: 'Bishoy Magdy', calls: 124, serverTime: '153:06:38', resolved: 429, records: 1, level: 'Good', grade: 6.5 },
+            { name: 'Diana Angela', calls: 245, serverTime: '161:19:41', resolved: 429, records: 1, level: 'Good', grade: 6 },
+            { name: 'Jucian Atef', calls: 126, serverTime: '141:40:37', resolved: 102, records: 68, level: 'Good', grade: 6 },
+            { name: 'Christina Fawzy', calls: 11, serverTime: '82:38:47', resolved: 225, records: 150, level: 'Good', grade: 6 },
+            { name: 'Jeffrey Balbin', calls: 178, serverTime: '173:14:27', resolved: 208, records: 0, level: 'Fair', grade: 5 },
+            { name: 'Kristel Mae', calls: 93, serverTime: '132:46:06', resolved: 206, records: 4, level: 'Fair', grade: 5 },
+            { name: 'Nada Zaki', calls: 36, serverTime: '76:42:36', resolved: 163, records: 1, level: 'Weak', grade: 0 },
+        ];
+
+        const reprocessMetrics = [
+            { label: 'Total Reprocess', value: 4085 },
+            { label: 'Total Resubmitted', value: 370 },
+            { label: 'Total Appeal / Retro auth', value: 1720 },
+            { label: 'Total Rechecking', value: 2038 },
+            { label: 'Total MR Sent', value: 1807 },
+            { label: 'Total Repairable', value: 6 },
+            { label: 'Total Paid', value: 3803 },
+            { label: 'Grand Total', value: 13829 },
+        ];
+
+        const actionPlan = [
+            'Anthem BlueCross: cash patients with out-of-network benefits since claims are denied.',
+            'On Independence day ( Official OFF ) we gave training to old and new employees for more insurance companies ( Eligibility – Benefits – Common Denial reason and best strategy to solve it )',
+            'Regular Audit on team members for their overall performance, handling claims, server hours & calls.',
+            'Although we are still getting underpayments from Healthnet but once we reprocess the claim they pay it with interest.',
+        ];
+
+        const challenges = [
+            'Medical representatives refusing medical-record expedites (BlueShield).',
+            'No recoupment/void letters for paid claims with interest.',
+            'C) Place of service denial got back and they don’t want to solve the issue and also some representative refuse to reprocess the claims.',
+        ];
+
+        const trainingInfo = {
+            participants: ['George Nessim', 'Christeen Ashraf', 'Youstina Mina (Excluded)'],
+            duration: '10 days (incl. 2 days of global Internet issues)',
+            hours: 80,
+        };
+
+        // ---------- Render helpers ----------
+        function renderOverview() {
+            const wrap = document.getElementById('overview');
+            wrap.innerHTML = '';
+            summaryMetrics.forEach(m => {
+                wrap.insertAdjacentHTML(
+                    'beforeend',
+                    `<div class="bg-white rounded-lg shadow p-4">
+               <p class="text-sm text-gray-500">${m.label}</p>
+               <p class="text-2xl font-bold">${m.value.toLocaleString()}</p>
+             </div>`
+                );
+            });
+        }
+
+        function renderTeam() {
+            const tbody = document.getElementById('teamBody');
+            tbody.innerHTML = '';
+            teamPerformance.forEach(t => {
+                tbody.insertAdjacentHTML(
+                    'beforeend',
+                    `<tr class="border-b">
+               <td class="px-4 py-2">${t.name}</td>
+               <td class="px-4 py-2">${t.calls}</td>
+               <td class="px-4 py-2">${t.serverTime}</td>
+               <td class="px-4 py-2">${t.resolved}</td>
+               <td class="px-4 py-2">${t.records}</td>
+               <td class="px-4 py-2">${t.level}</td>
+               <td class="px-4 py-2">${t.grade}</td>
+             </tr>`
+                );
+            });
+        }
+
+        function renderReprocess() {
+            const wrap = document.getElementById('reprocess');
+            wrap.innerHTML = '';
+            reprocessMetrics.forEach(r => {
+                wrap.insertAdjacentHTML(
+                    'beforeend',
+                    `<div class="bg-white rounded-lg shadow p-4 text-center">
+               <p class="text-sm text-gray-500">${r.label}</p>
+               <p class="text-xl font-bold">${r.value}</p>
+             </div>`
+                );
+            });
+        }
+
+        function renderLists() {
+            // Action plan
+            const aList = document.getElementById('actionList');
+            aList.innerHTML = '';
+            actionPlan.forEach(item =>
+                aList.insertAdjacentHTML('beforeend', `<li>${item}</li>`)
+            );
+
+            // Challenges
+            const cList = document.getElementById('challengeList');
+            cList.innerHTML = '';
+            challenges.forEach(item =>
+                cList.insertAdjacentHTML('beforeend', `<li>${item}</li>`)
+            );
+
+            // Training
+            const tList = document.getElementById('trainingList');
+            tList.innerHTML = '';
+            trainingInfo.participants.forEach(p =>
+                tList.insertAdjacentHTML('beforeend', `<li>${p}</li>`)
+            );
+            document.getElementById('trainingDuration').textContent =
+                'Duration: ' + trainingInfo.duration;
+            document.getElementById('trainingHours').textContent =
+                'Total Hours: ' + trainingInfo.hours;
+        }
+
+        // ---------- Charts ----------
+        function createCharts() {
+            // Bar (Denied vs Underpaid)
+            new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(d => d.month),
+                    datasets: [
+                        {
+                            label: 'Denied',
+                            data: monthlyData.map(d => d.denied),
+                            backgroundColor: '#f87171',
+                        },
+                        {
+                            label: 'Underpaid',
+                            data: monthlyData.map(d => d.underpaid),
+                            backgroundColor: '#60a5fa',
+                        },
+                    ],
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } } },
+            });
+
+            // Pie (Distribution summary)
+            new Chart(document.getElementById('pieChart'), {
+                type: 'pie',
+                data: {
+                    labels: summaryMetrics.map(m => m.label),
+                    datasets: [
+                        {
+                            data: summaryMetrics.map(m => m.value),
+                        },
+                    ],
+                },
+                options: { responsive: true },
+            });
+
+            // Line (Denied count 2024 vs 2025)
+            new Chart(document.getElementById('lineChartDenied'), {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(d => d.month),
+                    datasets: [
+                        {
+                            label: '2024 Denied',
+                            data: monthlyData.map(d => d.denied2024),
+                            borderColor: '#10b981',
+                            fill: false,
+                        },
+                        {
+                            label: '2025 Denied',
+                            data: monthlyData.map(d => d.denied),
+                            borderColor: '#f87171',
+                            fill: false,
+                        },
+                    ],
+                },
+                options: { responsive: true },
+            });
+
+            // Line (Denied % 2024 vs 2025)
+            new Chart(document.getElementById('lineChartPct'), {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(d => d.month),
+                    datasets: [
+                        {
+                            label: '2024 %',
+                            data: monthlyData.map(d => d.deniedPct2024),
+                            borderColor: '#10b981',
+                            fill: false,
+                        },
+                        {
+                            label: '2025 %',
+                            data: monthlyData.map(d => d.deniedPct2025),
+                            borderColor: '#f87171',
+                            fill: false,
+                        },
+                    ],
+                },
+                options: { responsive: true, scales: { y: { ticks: { callback: v => v + '%' } } } },
+            });
+        }
+
+        // ---------- Navigation ----------
+        const views = document.querySelectorAll('.view');
+        function showView(id) {
+            views.forEach(v => (v.id === id ? v.classList.remove('hidden') : v.classList.add('hidden')));
+            document.querySelectorAll('.btn').forEach(b => {
+                b.classList.toggle('bg-blue-600', b.dataset.view === id);
+                b.classList.toggle('text-white', b.dataset.view === id);
+            });
+        }
+
+        document.querySelectorAll('.btn').forEach(btn =>
+            btn.addEventListener('click', () => showView(btn.dataset.view))
+        );
+
+        // ---------- Initial render ----------
+        renderOverview();
+        renderTeam();
+        renderReprocess();
+        renderLists();
+        createCharts();
+        showView('overview'); // default
+    </script>
+</body>
+
+</html>
